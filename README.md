@@ -35,7 +35,11 @@ Redesigned the original Linux.do Connect authorization page with a more modern l
 Added interactive effects to the **"Authorization"** and **"Decline"** buttons to enhance responsiveness and user feedback.
 
 🎥 **Demo:**  
-https://github.com/user-attachments/assets/a69caaa2-77eb-4951-a562-ae29d1f8aa60
+
+
+https://github.com/user-attachments/assets/9f96e67a-4764-4068-b896-45d1053c2a70
+
+
 
 ---
 
@@ -44,7 +48,11 @@ https://github.com/user-attachments/assets/a69caaa2-77eb-4951-a562-ae29d1f8aa60
 Further refined the **Authorization button** animation to feel more natural and satisfying — inspired by Apple payment success transitions.
 
 🎥 **Demo:**  
-https://github.com/user-attachments/assets/a300f171-9d3e-4b4b-b6db-a891a3f8111c
+
+
+
+https://github.com/user-attachments/assets/a0ac9080-544d-47c6-8771-a94382b83826
+
 
 ---
 
@@ -53,7 +61,10 @@ https://github.com/user-attachments/assets/a300f171-9d3e-4b4b-b6db-a891a3f8111c
 Enhanced the animation flow for an even smoother and more realistic interaction experience.
 
 🎥 **Demo:**  
-https://github.com/user-attachments/assets/2bcd63f9-0fff-41c0-8cf2-0b917ff9816f
+
+
+https://github.com/user-attachments/assets/216f4313-1913-438c-b340-347ab64939b2
+
 
 ---
 
