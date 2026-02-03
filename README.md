@@ -10,7 +10,7 @@ https://github.com/user-attachments/assets/a69caaa2-77eb-4951-a562-ae29d1f8aa60
 ## V3: Improving the Effects to the Button "Autorization", makes it more natural and refer to Apple Payement Success Effect or Animations.
 https://github.com/user-attachments/assets/a300f171-9d3e-4b4b-b6db-a891a3f8111c
 
-## V4: Improving the Animations to the Button "Autorization":
+## V4: Improving the Animations to the Button "Autorization" (much more natural):
 https://github.com/user-attachments/assets/2bcd63f9-0fff-41c0-8cf2-0b917ff9816f
 
 
