@@ -7,5 +7,9 @@
 ## V2: Added Effects to the Button "Autorization" & "Decline" as shown in the DEMO video bellow:
 https://github.com/user-attachments/assets/a69caaa2-77eb-4951-a562-ae29d1f8aa60
 
+## V3: Improving the Effects to the Button "Autorization", makes it more natural and refer to Apple Payement Success Effect or Animations.
+https://github.com/user-attachments/assets/a300f171-9d3e-4b4b-b6db-a891a3f8111c
+
+
 
 
