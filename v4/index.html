@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authorize Access - LINUX DO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        /* Overlay for centered animation */
+        .auth-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .auth-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* The morphing circle container */
+        .auth-circle {
+            width: 72px;
+            height: 72px;
+            position: relative;
+        }
+
+        /* SVG Circle Spinner */
+        .circle-svg {
+            width: 72px;
+            height: 72px;
+            transform: rotate(-90deg);
+        }
+
+        .circle-track {
+            fill: none;
+            stroke: #e5e7eb;
+            stroke-width: 3;
+        }
+
+        .circle-progress {
+            fill: none;
+            stroke: #374151;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-dasharray: 204;
+            stroke-dashoffset: 153;
+            /* Shows ~25% of the circle */
+            transform-origin: center;
+            animation: spinProgress 0.9s cubic-bezier(0.4, 0.15, 0.6, 0.85) infinite;
+        }
+
+        @keyframes spinProgress {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Success state - smooth transition */
+        .circle-svg.success .circle-track {
+            stroke: #22c55e;
+            transition: stroke 0.4s ease;
+        }
+
+        .circle-svg.success .circle-progress {
+            stroke: #22c55e;
+            stroke-dashoffset: 0;
+            /* Full circle */
+            animation: none;
+            transition: stroke 0.3s ease, stroke-dashoffset 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Success fill circle - grows from center */
+        .success-fill {
+            position: absolute;
+            inset: 3px;
+            border-radius: 50%;
+            background: #22c55e;
+            transform: scale(0);
+            opacity: 0;
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+        }
+
+        .success-fill.visible {
+            transform: scale(1);
+            opacity: 1;
+            box-shadow: 0 0 25px rgba(34, 197, 94, 0.35);
+        }
+
+        /* Checkmark inside circle */
+        .check-svg {
+            position: absolute;
+            inset: 0;
+            width: 72px;
+            height: 72px;
+            padding: 20px;
+            opacity: 0;
+            transform: scale(0.6);
+            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 2;
+        }
+
+        .check-svg.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .check-svg path {
+            stroke: white;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+            stroke-dasharray: 28;
+            stroke-dashoffset: 28;
+        }
+
+        .check-svg.visible path {
+            animation: drawCheck 0.4s ease forwards;
+            animation-delay: 0.1s;
+        }
+
+        @keyframes drawCheck {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        /* Fade out for buttons */
+        .buttons-container {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .buttons-container.fading {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4 antialiased text-gray-800">
+
+    <!-- Animation Overlay -->
+    <div id="auth-overlay" class="auth-overlay">
+        <div id="overlay-content" class="auth-circle">
+            <!-- Circle Spinner using SVG for smooth transitions -->
+            <svg id="circle-svg" class="circle-svg" viewBox="0 0 72 72">
+                <circle class="circle-track" cx="36" cy="36" r="32.5"></circle>
+                <circle class="circle-progress" cx="36" cy="36" r="32.5"></circle>
+            </svg>
+            <!-- Success fill (grows from center) -->
+            <div id="success-fill" class="success-fill"></div>
+            <!-- Checkmark -->
+            <svg id="check-svg" class="check-svg" viewBox="0 0 32 32">
+                <path d="M6 16l7 7L26 9"></path>
+            </svg>
+        </div>
+    </div>
+
+    <div
+        class="bg-white w-full max-w-[480px] rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-gray-100">
+
+        <div class="px-10 pt-10 pb-6 text-center">
+            <div
+                class="mx-auto h-16 w-16 bg-gray-900 text-white rounded-xl flex items-center justify-center text-2xl font-bold mb-6 shadow-lg">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.131A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.2-2.85.577-4.147">
+                    </path>
+                </svg>
+            </div>
+
+            <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Authorize Access</h1>
+            <p class="text-gray-500 mt-2 text-sm leading-relaxed">
+                The application <strong class="text-gray-800">LINUX DO Credit</strong> is requesting access to your
+                account.
+            </p>
+        </div>
+
+        <div class="mx-10 bg-gray-50 rounded-lg p-3 border border-gray-200 flex items-center justify-between mb-8">
+            <div class="flex items-center gap-3 overflow-hidden">
+                <div
+                    class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold shadow-sm shrink-0">
+                    D
+                </div>
+                <div class="flex flex-col truncate">
+                    <span class="text-sm font-semibold text-gray-900 truncate">Davon (dkly2004)</span>
+                    <span class="text-xs text-gray-500">Level 3 User</span>
+                </div>
+            </div>
+            <a href="/logout/268895"
+                class="text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline px-2 whitespace-nowrap">
+                Switch account
+            </a>
+        </div>
+
+        <div class="px-10 pb-4">
+            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">Permissions Requested</h3>
+
+            <ul class="space-y-4">
+                <li class="flex items-start gap-3">
+                    <div class="mt-0.5 text-blue-600 shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">Read Basic Profile</p>
+                        <p class="text-xs text-gray-500 mt-0.5">Allows access to your username, avatar, and user level.
+                        </p>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <div class="px-10 mt-2 mb-8">
+            <p class="text-xs text-center text-gray-400 leading-normal">
+                Make sure you trust <a href="https://credit.linux.do" target="_blank"
+                    class="text-gray-600 hover:underline hover:text-blue-600 transition-colors">credit.linux.do</a>.<br>
+                By authorizing, you agree to share the listed data.
+            </p>
+        </div>
+
+        <div id="buttons-container" class="buttons-container px-10 pb-10 flex flex-col-reverse sm:flex-row gap-3">
+            <button id="decline-btn" type="button" data-href="/oauth2/decline/"
+                class="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 text-gray-700 font-medium text-sm text-center hover:bg-gray-50 hover:text-gray-900 transition-all focus:ring-2 focus:ring-gray-200 focus:outline-none flex items-center justify-center">
+                Cancel
+            </button>
+            <button id="authorize-btn" type="button" data-href="/oauth2/approve/"
+                class="flex-1 px-4 py-2.5 rounded-lg bg-gray-900 text-white font-medium text-sm text-center hover:bg-black transition-all shadow-md hover:shadow-lg focus:ring-2 focus:ring-gray-400 focus:outline-none flex items-center justify-center">
+                Authorize
+            </button>
+        </div>
+
+        <div class="bg-gray-50 border-t border-gray-100 py-4 text-center">
+            <p class="text-[10px] text-gray-400 font-medium tracking-wide">
+                SECURED BY <span class="text-gray-600 font-bold">LINUX DO</span>
+            </p>
+        </div>
+
+    </div>
+
+    <script>
+        const overlay = document.getElementById('auth-overlay');
+        const circleSvg = document.getElementById('circle-svg');
+        const successFill = document.getElementById('success-fill');
+        const checkSvg = document.getElementById('check-svg');
+        const buttonsContainer = document.getElementById('buttons-container');
+
+        // Reset overlay state
+        function resetOverlay() {
+            circleSvg.classList.remove('success');
+            successFill.classList.remove('visible');
+            checkSvg.classList.remove('visible');
+        }
+
+        // Authorize Button: Smooth Morphing Animation
+        document.getElementById('authorize-btn').addEventListener('click', function (e) {
+            e.preventDefault();
+            const targetUrl = this.getAttribute('data-href');
+
+            // Haptic feedback on click
+            if (navigator.vibrate) {
+                navigator.vibrate(10);
+            }
+
+            // Reset and show overlay
+            resetOverlay();
+
+            // 1. Fade out buttons smoothly
+            buttonsContainer.classList.add('fading');
+
+            // 2. Show overlay with spinning circle
+            setTimeout(() => {
+                overlay.classList.add('active');
+            }, 150);
+
+            // 3. Step 1: Complete the circle ring (spinner becomes full green ring)
+            setTimeout(() => {
+                circleSvg.classList.add('success');
+            }, 1100);
+
+            // 4. Step 2: Fill the circle from center
+            setTimeout(() => {
+                successFill.classList.add('visible');
+            }, 1500);
+
+            // 5. Step 3: Show checkmark
+            setTimeout(() => {
+                checkSvg.classList.add('visible');
+
+                // Success Haptic
+                if (navigator.vibrate) {
+                    navigator.vibrate([12, 60, 25]);
+                }
+            }, 1700);
+
+            // 6. Redirect
+            setTimeout(() => {
+                window.location.href = targetUrl;
+            }, 2400);
+        });
+
+        // Decline Button: Simple loading then redirect
+        document.getElementById('decline-btn').addEventListener('click', function (e) {
+            e.preventDefault();
+            const btn = this;
+            const targetUrl = btn.getAttribute('data-href');
+
+            // Simple Haptic
+            if (navigator.vibrate) {
+                navigator.vibrate(10);
+            }
+
+            // Loading State on button
+            btn.disabled = true;
+            btn.classList.add('cursor-not-allowed', 'opacity-70');
+            btn.innerHTML = `
+                <svg class="animate-spin h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            `;
+
+            // Redirect after short delay
+            setTimeout(() => {
+                window.location.href = targetUrl;
+            }, 700);
+        });
+    </script>
+</body>
+
+</html>
